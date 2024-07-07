@@ -1,0 +1,68 @@
+import mne
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from tensorflow import keras
+from tensorflow.keras import layers
+
+
+def calculate_psd(epochs, freqs):
+  psds, _ = epochs.compute_psd(fmin=freqs[0], fmax=freqs[-1], n_fft=1024)
+  band_power = np.mean(psds[:, :, freqs[0]:freqs[1]], axis=2)
+  return band_power
+
+
+# Define paths and parameters (replace with your data paths)
+data_path = "path/to/EEG_data.fif"
+freqs = [1, 4, 8, 12, 30, 100]  # Define frequency bands
+
+
+# Load EEG data
+raw = mne.io.read_raw_fif(data_path)
+
+
+# Define electrode selection (optional)
+picks = mne.pick_types(raw.info, meg=False, eeg=True, eog=False)
+
+
+# Define epochs for rest and task conditions (based on annotations)
+epochs_rest = mne.Epochs(raw, mne.find_events(raw, ..., condition='rest'), tmin=-1, 
+                          tmax=4, picks=picks, baseline=(-1, 0))
+epochs_task = mne.Epochs(raw, mne.find_events(raw, ..., condition='task'), tmin=-1, 
+                          tmax=4, picks=picks, baseline=(-1, 0))
+
+
+#  PSD Analysis
+band_power_rest = calculate_psd(epochs_rest, freqs[::2])
+band_power_task = calculate_psd(epochs_task, freqs[::2])
+
+
+# Plot average PSD for each band and condition
+plt.figure()
+for i, band in enumerate(freqs[::2]):
+  plt.plot(epochs_rest.info['ch_names'], np.mean(band_power_rest[:, :, i], axis=0), label=f'Rest (Delta-{band} Hz)')
+  plt.plot(epochs_task.info['ch_names'], np.mean(band_power_task[:, :, i], axis=0), label=f'Task (Delta-{band} Hz)')
+plt.legend()
+plt.show()
+
+# Analyze and report findings on changes in power
+
+
+# Deep Learning Classification
+
+# Feature extraction (modify based on chosen model)
+def extract_features(epochs):
+  # Example: Extracting epoch data for EEGNet-like models
+  X = epochs.get_data()  # Assuming using entire epoch data
+  return X
+
+X_rest = extract_features(epochs_rest)
+X_task = extract_features(epochs_task)
+y_rest = np.zeros(len(X_rest))  # Label rest as 0
+y_task = np.ones(len(X_task))  # Label task as 1
+
+X = np.concatenate((X_rest, X_task), axis=0)
+y = np.concatenate((y_rest, y_task))
+
+
+# Train-Test
